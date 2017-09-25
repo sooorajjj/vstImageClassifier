@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">VehicleST Image Classifier</string>
+    <string name="str_upload">Upload</string>
+    <string name="str_browse_image">Browse Image</string>
+</resources>

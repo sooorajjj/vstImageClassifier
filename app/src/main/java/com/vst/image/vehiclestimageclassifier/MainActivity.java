@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
 
     public RequestManager mGlideRequestManager;
     ArrayList<Uri> selectedUriList;
-    private String[] imagePath;
     private ViewGroup mSelectedImagesContainer;
 
     private String FOLDER_NAME = "SomeFolder";
@@ -59,9 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
         setMultiShowButton();
 
-//        if(selectedUriList!=null){
             uploadButton();
-//        }
 
     }
     private void setMultiShowButton() {
@@ -143,9 +140,6 @@ public class MainActivity extends AppCompatActivity {
 
             thumbnail.setLayoutParams(new FrameLayout.LayoutParams(wdpx, htpx));
 
-            imagePath = new String[selectedUriList.size()];
-
-
         }
 
     }
@@ -155,33 +149,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-//                GetImageNameEditText = imageName.getText().toString();
-
-//            getPaths(selectedUriList);
-
-            imageUpload(imagePath);
+                if(selectedUriList!=null && selectedUriList.size()!=0){
+                    imageUpload();
+                }else {
+                    Toast.makeText(MainActivity.this, "Please Select Images to upload!\n",
+                            Toast.LENGTH_SHORT).show();
+                }
 
             }
         });
     }
-//    private void getPaths(ArrayList<Uri> selectedUriList){
-//
-//        int i = 0;
-//        for (Uri uri : selectedUriList) {
-//            imagePath[i] = uri.toString();
-//            i++;
-//        }
-//    }
 
-    private void imageUpload(String[] imagePath) {
+    private void imageUpload() {
 
-
-//        int b = 0;
-//        for (String strImagePath : imagePath){
-//            b++;
-//            smr.addFile(FOLDER_NAME+"/image"+b+".jpg", strImagePath);
-//            VolleyQueue.getInstance().addToRequestQueue(smr);
-//        }
         final ProgressDialog loading = ProgressDialog.show(this,"Uploading...","Please wait...",false,false);
         VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest(Request.Method.POST, Constants.UPLOAD_URL, new Response.Listener<NetworkResponse>() {
             @Override
@@ -194,12 +174,12 @@ public class MainActivity extends AppCompatActivity {
 
                     loading.dismiss();
 
-//                    if (status.equals(Constant.REQUEST_SUCCESS)) {
-//                        // tell everybody you have succed upload image and post strings
-//                        Log.i("Messsage", message);
-//                    } else {
-//                        Log.i("Unexpected", message);
-//                    }
+                    if (status.equals(Constants.REQUEST_SUCCESS)) {
+                        // tell everybody you have succed upload image and post strings
+                        Log.i("Messsage", message);
+                    } else {
+                        Log.i("Unexpected", message);
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

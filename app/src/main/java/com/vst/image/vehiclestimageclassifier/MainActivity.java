@@ -1,11 +1,8 @@
 package com.vst.image.vehiclestimageclassifier;
 
 import android.Manifest;
-import android.database.Cursor;
+import android.app.ProgressDialog;
 import android.net.Uri;
-import android.os.Build;
-import android.provider.MediaStore;
-import android.support.v4.content.CursorLoader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,10 +15,12 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.android.volley.NetworkResponse;
+import com.android.volley.NoConnectionError;
 import com.android.volley.Request;
 import com.android.volley.Response;
-import com.android.volley.error.VolleyError;
-import com.android.volley.request.SimpleMultiPartRequest;
+import com.android.volley.TimeoutError;
+import com.android.volley.VolleyError;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
 import com.gun0912.tedpermission.PermissionListener;
@@ -30,7 +29,12 @@ import com.gun0912.tedpermission.TedPermission;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import gun0912.tedbottompicker.TedBottomPicker;
 
@@ -153,55 +157,141 @@ public class MainActivity extends AppCompatActivity {
 
 //                GetImageNameEditText = imageName.getText().toString();
 
-            getPaths(selectedUriList);
+//            getPaths(selectedUriList);
 
             imageUpload(imagePath);
 
             }
         });
     }
-    private void getPaths(ArrayList<Uri> selectedUriList){
-
-        int i = 0;
-        for (Uri uri : selectedUriList) {
-            imagePath[i] = uri.toString();
-            i++;
-        }
-    }
+//    private void getPaths(ArrayList<Uri> selectedUriList){
+//
+//        int i = 0;
+//        for (Uri uri : selectedUriList) {
+//            imagePath[i] = uri.toString();
+//            i++;
+//        }
+//    }
 
     private void imageUpload(String[] imagePath) {
 
-        SimpleMultiPartRequest smr = new SimpleMultiPartRequest(Request.Method.POST, Constants.UPLOAD_URL,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        Log.d("Response", response);
-                        try {
-                            JSONObject jObj = new JSONObject(response);
-                            String message = jObj.getString("message");
 
-                            Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+//        int b = 0;
+//        for (String strImagePath : imagePath){
+//            b++;
+//            smr.addFile(FOLDER_NAME+"/image"+b+".jpg", strImagePath);
+//            VolleyQueue.getInstance().addToRequestQueue(smr);
+//        }
+        final ProgressDialog loading = ProgressDialog.show(this,"Uploading...","Please wait...",false,false);
+        VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest(Request.Method.POST, Constants.UPLOAD_URL, new Response.Listener<NetworkResponse>() {
+            @Override
+            public void onResponse(NetworkResponse response) {
+                String resultResponse = new String(response.data);
+                try {
+                    JSONObject result = new JSONObject(resultResponse);
+                    String status = result.getString("status");
+                    String message = result.getString("message");
 
-                        } catch (JSONException e) {
-                            // JSON error
-                            e.printStackTrace();
-                            Toast.makeText(getApplicationContext(), "Json error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    }
-                }, new Response.ErrorListener() {
+                    loading.dismiss();
+
+//                    if (status.equals(Constant.REQUEST_SUCCESS)) {
+//                        // tell everybody you have succed upload image and post strings
+//                        Log.i("Messsage", message);
+//                    } else {
+//                        Log.i("Unexpected", message);
+//                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_LONG).show();
+                loading.dismiss();
+                NetworkResponse networkResponse = error.networkResponse;
+                String errorMessage = "Unknown error";
+                if (networkResponse == null) {
+                    if (error.getClass().equals(TimeoutError.class)) {
+                        errorMessage = "Request timeout";
+                    } else if (error.getClass().equals(NoConnectionError.class)) {
+                        errorMessage = "Failed to connect server";
+                    }
+                } else {
+                    String result = new String(networkResponse.data);
+                    try {
+                        JSONObject response = new JSONObject(result);
+                        String status = response.getString("status");
+                        String message = response.getString("message");
+
+                        Log.e("Error Status", status);
+                        Log.e("Error Message", message);
+
+                        if (networkResponse.statusCode == 404) {
+                            errorMessage = "Resource not found";
+                        } else if (networkResponse.statusCode == 401) {
+                            errorMessage = message+" Please login again";
+                        } else if (networkResponse.statusCode == 400) {
+                            errorMessage = message+ " Check your inputs";
+                        } else if (networkResponse.statusCode == 500) {
+                            errorMessage = message+" Something is getting wrong";
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Log.i("Error", errorMessage);
+//                error.printStackTrace();
             }
-        });
+        }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+//                params.put("api_token", "gh659gjhvdyudo973823tt9gvjf7i6ric75r76");
+                params.put("folder_name", FOLDER_NAME);
+//                params.put("location", mLocationInput.getText().toString());
+//                params.put("about", mAvatarInput.getText().toString());
+//                params.put("contact", mContactInput.getText().toString());
+                return params;
+            }
 
-        int b = 0;
-        for (String strImagePath : imagePath){
-            b++;
-            smr.addFile(FOLDER_NAME+"/image"+b+".jpg", strImagePath);
-            VolleyQueue.getInstance().addToRequestQueue(smr);
-        }
+            @Override
+            protected Map<String, DataPart> getByteData() {
+                Map<String, DataPart> params = new HashMap<>();
 
+                int i = 0;
+                for (Uri uri : selectedUriList) {
+                    i++;
+                    try {
+                        InputStream iStream = getContentResolver().openInputStream(uri);
+                        byte[] inputData = getBytes(iStream);
+                        // file name could found file base or direct access from real path
+                        // for now just get bitmap data from ImageView
+                        params.put("image_file"+i, new DataPart("image"+i+".jpg", inputData , "image/jpeg"));
 
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                return params;
+            }
+        };
+
+        VolleySingleton.getInstance(getBaseContext()).addToRequestQueue(multipartRequest);
     }
+
+    public byte[] getBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+        int bufferSize = 1024;
+        byte[] buffer = new byte[bufferSize];
+
+        int len = 0;
+        while ((len = inputStream.read(buffer)) != -1) {
+            byteBuffer.write(buffer, 0, len);
+        }
+        return byteBuffer.toByteArray();
+    }
+
 }
+

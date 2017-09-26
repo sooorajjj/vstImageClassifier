@@ -40,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
     public RequestManager mGlideRequestManager;
     ArrayList<Uri> selectedUriList;
     private String[] imagePath;
-    Uri selectedUri;
     private ViewGroup mSelectedImagesContainer;
 
     private String FOLDER_NAME = "SomeFolder";
@@ -56,9 +55,9 @@ public class MainActivity extends AppCompatActivity {
 
         setMultiShowButton();
 
-        if(selectedUriList!=null){
+//        if(selectedUriList!=null){
             uploadButton();
-        }
+//        }
 
     }
     private void setMultiShowButton() {
@@ -140,6 +139,8 @@ public class MainActivity extends AppCompatActivity {
 
             thumbnail.setLayoutParams(new FrameLayout.LayoutParams(wdpx, htpx));
 
+            imagePath = new String[selectedUriList.size()];
+
 
         }
 
@@ -163,22 +164,7 @@ public class MainActivity extends AppCompatActivity {
 
         int i = 0;
         for (Uri uri : selectedUriList) {
-            String[] proj = { uri.toString() };
-            CursorLoader loader = new CursorLoader(getApplicationContext(), uri, proj, null, null, null);
-            Cursor cursor = loader.loadInBackground();
-            int column_index = cursor.getColumnIndexOrThrow(uri.toString());
-//            Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-//            cursor.moveToFirst();
-//            String document_id = cursor.getString(0);
-//            document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
-//            cursor.close();
-//            cursor = getContentResolver().query(
-//                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-//                    null, MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
-            cursor.moveToFirst();
-
-            imagePath[i] = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-            cursor.close();
+            imagePath[i] = uri.toString();
             i++;
         }
     }
@@ -209,11 +195,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        int b = 0;
         for (String strImagePath : imagePath){
-
-            smr.addFile(FOLDER_NAME+"/image", strImagePath);
+            b++;
+            smr.addFile(FOLDER_NAME+"/image"+b+".jpg", strImagePath);
+            VolleyQueue.getInstance().addToRequestQueue(smr);
         }
-        VolleyQueue.getInstance().addToRequestQueue(smr);
 
 
     }

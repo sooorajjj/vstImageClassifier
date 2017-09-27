@@ -2,4 +2,6 @@
     <string name="app_name">VehicleST Image Classifier</string>
     <string name="str_upload">Upload</string>
     <string name="str_browse_image">Browse Image</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
 </resources>

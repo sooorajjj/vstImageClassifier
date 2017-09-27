@@ -4,4 +4,8 @@
     <string name="str_browse_image">Browse Image</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="title_activity_server">ServerActivity</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_download">DownloadActivity</string>
 </resources>

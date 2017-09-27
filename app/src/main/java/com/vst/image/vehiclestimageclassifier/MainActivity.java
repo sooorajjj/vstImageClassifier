@@ -2,6 +2,7 @@ package com.vst.image.vehiclestimageclassifier;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.net.Uri;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -94,12 +95,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
 
         if (id == R.id.nav_upload) {
-            // Handle the camera action
+            drawer.closeDrawer(GravityCompat.START);
         } else if (id == R.id.nav_view_image) {
-
+            Intent intent = new Intent(this, ServerActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_download) {
+            Intent intent = new Intent(this, DownloadActivity.class);
+            startActivity(intent);
 
         } else if (id == R.id.nav_share) {
             Toast.makeText(MainActivity.this, "Share to SocialMedia is [WIP]\n",
@@ -109,7 +114,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     Toast.LENGTH_SHORT).show();
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -227,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     loading.dismiss();
 
                     if (status.equals(Constants.REQUEST_SUCCESS)) {
-                        // tell everybody you have succed upload image and post strings
+                        // tell everybody you have succeed upload image and post strings
                         Log.i("Messsage", message);
                     } else {
                         Log.i("Unexpected", message);

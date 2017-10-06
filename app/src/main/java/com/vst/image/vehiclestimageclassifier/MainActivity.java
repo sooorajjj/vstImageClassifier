@@ -3,6 +3,9 @@ package com.vst.image.vehiclestimageclassifier;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -18,6 +21,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -52,7 +56,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     ArrayList<Uri> selectedUriList;
     private ViewGroup mSelectedImagesContainer;
 
-    private String FOLDER_NAME = "SomeFolder";
+//    private String FOLDER_NAME = "SomeFolder";
+    EditText etModelName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +80,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mSelectedImagesContainer = (ViewGroup) findViewById(R.id.selected_photos_container);
 
         setMultiShowButton();
+
+        etModelName= (EditText) findViewById(R.id.et_model_name);
 
         uploadButton();
 
@@ -218,6 +225,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void imageUpload() {
 
+        final String MODEL_NAME = etModelName.getText().toString().trim();
+
         final ProgressDialog loading = ProgressDialog.show(this,"Uploading...","Please wait...",false,false);
         VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest(Request.Method.POST, Constants.UPLOAD_URL, new Response.Listener<NetworkResponse>() {
             @Override
@@ -276,14 +285,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     }
                 }
                 Log.i("Error", errorMessage);
-//                error.printStackTrace();
+                error.printStackTrace();
             }
         }) {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
 //                params.put("api_token", "gh659gjhvdyudo973823tt9gvjf7i6ric75r76");
-                params.put("folder_name", FOLDER_NAME);
+//                params.put("Connection", "Keep-Alive");
+//                params.put("ENCTYPE", "multipart/form-data");
+//                params.put("uploaded_file", fileName);
+//                params.put("folder_name", FOLDER_NAME);
 //                params.put("location", mLocationInput.getText().toString());
 //                params.put("about", mAvatarInput.getText().toString());
 //                params.put("contact", mContactInput.getText().toString());
@@ -299,10 +311,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     i++;
                     try {
                         InputStream iStream = getContentResolver().openInputStream(uri);
+//                        BitmapRegionDecoder decoder = BitmapRegionDecoder.newInstance(iStream, false);
+//                        If you need to load very large images, the following code will load it in in
+//                        tiles (avoiding large memory allocations)
+//                        Bitmap region = decoder.decodeRegion(new Rect(10, 10, 50, 50), null);
                         byte[] inputData = getBytes(iStream);
                         // file name could found file base or direct access from real path
                         // for now just get bitmap data from ImageView
-                        params.put("image_file"+i, new DataPart("image"+i+".jpg", inputData , "image/jpeg"));
+//                        params.put("image_file"+i, new DataPart("image"+i+".jpg", inputData , "image/jpeg"));
+//                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+//                        region.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+
+                        params.put(MODEL_NAME+i, new DataPart(MODEL_NAME,MODEL_NAME+i+".jpg", inputData , "image/jpeg"));
+
 
                     } catch (IOException e) {
                         e.printStackTrace();

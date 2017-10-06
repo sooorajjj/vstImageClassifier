@@ -2,10 +2,13 @@ package com.vst.image.vehiclestimageclassifier;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Rect;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -129,6 +132,35 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Snackbar.make(findViewById(R.id.app_bar_main), message, Snackbar.LENGTH_SHORT).show();
     }
 
+    public static boolean isNetworkAvailable(Context context, int[] networkTypes) {
+        try {
+            ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            for (int networkType : networkTypes) {
+                NetworkInfo netInfo = cm.getNetworkInfo(networkType);
+                if (netInfo != null && netInfo.getState() == NetworkInfo.State.CONNECTED) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
+    }
+
+    // Check all connectivities whether available or not
+    public boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        // if no network is available networkInfo will be null
+        // otherwise check if we are connected
+        NetworkInfo info = Connectivity.getNetworkInfo(this);
+        if (info != null && info.isConnected()) {
+            if (info.getType() == ConnectivityManager.TYPE_MOBILE || info.getType() == ConnectivityManager.TYPE_WIFI)
+                return true;
+        }
+        return false;
+    }
 
     private void setMultiShowButton() {
 
@@ -219,7 +251,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void onClick(View view) {
 
                 if(selectedUriList!=null && selectedUriList.size()!=0){
-                    imageUpload();
+                    if (isNetworkAvailable())
+                        imageUpload();
+                    else {
+                        String message = "No internet Connectivity Available";
+                        Log.i(TAG,message);
+                        showSnackbar(message);
+                    }
+
                 }else {
                     Toast.makeText(MainActivity.this, "Please Select Images to upload!\n",
                             Toast.LENGTH_SHORT).show();

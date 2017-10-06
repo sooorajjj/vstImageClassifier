@@ -6,6 +6,7 @@ package com.vst.image.vehiclestimageclassifier;
 
 public class Constants {
 
+    public static final String SERVER_URL = "http://ascentcity.com/Mobileapp/";
     public static final String IMAGES_URL = "http://ascentcity.com/Mobileapp/imagefile.php";
     public static final String UPLOAD_URL = "http://ascentcity.com/Mobileapp/upload.php";
     public static final String REQUEST_SUCCESS = "success";

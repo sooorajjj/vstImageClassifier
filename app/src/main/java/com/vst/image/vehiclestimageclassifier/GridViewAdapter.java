@@ -14,6 +14,8 @@ import com.android.volley.toolbox.NetworkImageView;
 
 import java.util.ArrayList;
 
+import static com.vst.image.vehiclestimageclassifier.Constants.SERVER_URL;
+
 /**
  * Created by sooorajjj on 27/9/17.
  */
@@ -68,7 +70,8 @@ public class GridViewAdapter extends BaseAdapter {
 
         //Initializing ImageLoader
         imageLoader = VolleySingleton.getInstance(context).getImageLoader();
-        imageLoader.get(urls.get(i), ImageLoader.getImageListener(networkImageView, R.mipmap.ic_launcher, android.R.drawable.ic_dialog_alert));
+        imageLoader.get(SERVER_URL+urls.get(i), ImageLoader.getImageListener(networkImageView,
+                R.mipmap.ic_launcher, android.R.drawable.ic_dialog_alert));
 
         //Setting the image url to load
         networkImageView.setImageUrl(urls.get(i),imageLoader);

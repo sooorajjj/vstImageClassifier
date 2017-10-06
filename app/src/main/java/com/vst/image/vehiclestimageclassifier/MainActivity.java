@@ -8,6 +8,7 @@ import android.graphics.BitmapRegionDecoder;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -55,8 +56,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public RequestManager mGlideRequestManager;
     ArrayList<Uri> selectedUriList;
     private ViewGroup mSelectedImagesContainer;
-
-//    private String FOLDER_NAME = "SomeFolder";
+    private static final String TAG = MainActivity.class.getName();
     EditText etModelName;
 
     @Override
@@ -124,6 +124,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+    public void showSnackbar(String message) {
+        Snackbar.make(findViewById(R.id.app_bar_main), message, Snackbar.LENGTH_SHORT).show();
+    }
+
+
     private void setMultiShowButton() {
 
         Button btn_multi_show = (Button) findViewById(R.id.btn_multi_show);
@@ -232,21 +238,36 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onResponse(NetworkResponse response) {
                 String resultResponse = new String(response.data);
-                try {
-                    JSONObject result = new JSONObject(resultResponse);
-                    String status = result.getString("status");
-                    String message = result.getString("message");
+                int result = Integer.parseInt(resultResponse);
+                loading.dismiss();
 
-                    loading.dismiss();
+                if (result == 1) {
+                    // tell everybody you have succeed upload image and post strings
 
-                    if (status.equals(Constants.REQUEST_SUCCESS)) {
-                        // tell everybody you have succeed upload image and post strings
-                        Log.i("Messsage", message);
-                    } else {
-                        Log.i("Unexpected", message);
+                    String message = "Response: 1 = Success";
+                    Log.i(TAG,message);
+                    showSnackbar(message);
+
+                } else {
+                    if (result == 0) {
+                        String message = "Response: 0 = Failed To upload Image";
+                        Log.i(TAG,message);
+                        showSnackbar(message);
+
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                    else if (result == 2) {
+                        String message = "Response: 2 = File size Larger Than 50MB";
+                        Log.i(TAG,message);
+                        showSnackbar(message);
+
+
+                    }
+                    else if (result == 3) {
+                        String message = "Response: 3 = Permission denied to create Directory";
+                        Log.i(TAG,message);
+                        showSnackbar(message);
+
+                    }
                 }
             }
         }, new Response.ErrorListener() {

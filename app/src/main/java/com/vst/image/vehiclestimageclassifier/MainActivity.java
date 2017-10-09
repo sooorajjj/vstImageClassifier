@@ -377,14 +377,9 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-//                params.put("api_token", "gh659gjhvdyudo973823tt9gvjf7i6ric75r76");
-//                params.put("Connection", "Keep-Alive");
-//                params.put("ENCTYPE", "multipart/form-data");
-//                params.put("uploaded_file", fileName);
-//                params.put("folder_name", FOLDER_NAME);
-//                params.put("location", mLocationInput.getText().toString());
-//                params.put("about", mAvatarInput.getText().toString());
-//                params.put("contact", mContactInput.getText().toString());
+                params.put("folder_name", MODEL_NAME);
+                params.put("gps_latitude", mLatitudeTextView.getText().toString().trim());
+                params.put("gps_longitude", mLongitudeTextView.getText().toString().trim());
                 return params;
             }
 
@@ -397,19 +392,9 @@ GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
                     i++;
                     try {
                         InputStream iStream = getContentResolver().openInputStream(uri);
-//                        BitmapRegionDecoder decoder = BitmapRegionDecoder.newInstance(iStream, false);
-//                        If you need to load very large images, the following code will load it in in
-//                        tiles (avoiding large memory allocations)
-//                        Bitmap region = decoder.decodeRegion(new Rect(10, 10, 50, 50), null);
                         byte[] inputData = getBytes(iStream);
-                        // file name could found file base or direct access from real path
-                        // for now just get bitmap data from ImageView
-//                        params.put("image_file"+i, new DataPart("image"+i+".jpg", inputData , "image/jpeg"));
-//                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-//                        region.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
 
-                        params.put(MODEL_NAME+i, new DataPart(MODEL_NAME,MODEL_NAME+i+".jpg", inputData , "image/jpeg"));
-
+                        params.put(MODEL_NAME+i, new DataPart(MODEL_NAME+i+".jpg", inputData , "image/jpeg"));
 
                     } catch (IOException e) {
                         e.printStackTrace();

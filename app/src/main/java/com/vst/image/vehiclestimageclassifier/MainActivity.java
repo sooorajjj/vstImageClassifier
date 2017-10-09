@@ -1,17 +1,21 @@
 package com.vst.image.vehiclestimageclassifier;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapRegionDecoder;
-import android.graphics.Rect;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.provider.Settings;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -28,6 +32,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.NetworkResponse;
@@ -38,6 +43,11 @@ import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
 
@@ -53,7 +63,8 @@ import java.util.Map;
 
 import gun0912.tedbottompicker.TedBottomPicker;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener ,
+GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
 
     public RequestManager mGlideRequestManager;
@@ -61,6 +72,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private ViewGroup mSelectedImagesContainer;
     private static final String TAG = MainActivity.class.getName();
     EditText etModelName;
+    private GoogleApiClient mGoogleApiClient;
+    private Location mLocation;
+    private LocationManager mLocationManager;
+    private LocationRequest mLocationRequest;
+    private TextView mLatitudeTextView;
+    private TextView mLongitudeTextView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        checkLocation();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.activity_main);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -78,7 +97,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(MainActivity.this);
 
+        mLatitudeTextView = (TextView) findViewById((R.id.tv_latitude));
+        mLongitudeTextView = (TextView) findViewById((R.id.tv_longitude));
+
         mGlideRequestManager = Glide.with(this);
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+
+        mLocationManager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
+
+        //check whether location service is enable or not in your  phone
 
         mSelectedImagesContainer = (ViewGroup) findViewById(R.id.selected_photos_container);
 
@@ -130,21 +162,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void showSnackbar(String message) {
         Snackbar.make(findViewById(R.id.app_bar_main), message, Snackbar.LENGTH_SHORT).show();
-    }
-
-    public static boolean isNetworkAvailable(Context context, int[] networkTypes) {
-        try {
-            ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            for (int networkType : networkTypes) {
-                NetworkInfo netInfo = cm.getNetworkInfo(networkType);
-                if (netInfo != null && netInfo.getState() == NetworkInfo.State.CONNECTED) {
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return false;
     }
 
     // Check all connectivities whether available or not
@@ -209,7 +226,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                 "Please turn on permissions at [Setting] > [Permission]")
                         .setPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.CAMERA,
                                 Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.INTERNET,
-                                Manifest.permission.ACCESS_NETWORK_STATE)
+                                Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION)
                         .check();
 
             }
@@ -277,36 +295,44 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onResponse(NetworkResponse response) {
                 String resultResponse = new String(response.data);
-                int result = Integer.parseInt(resultResponse);
-                loading.dismiss();
+                try {
+                    int result = Integer.parseInt(resultResponse);
 
-                if (result == 1) {
-                    // tell everybody you have succeed upload image and post strings
+                    loading.dismiss();
 
-                    String message = "Response: 1 = Success";
-                    Log.i(TAG,message);
+                    if (result == 1) {
+                        // tell everybody you have succeed upload image and post strings
+
+                        String message = "Response: 1 = Success";
+                        Log.i(TAG,message);
+                        showSnackbar(message);
+
+                    } else {
+                        if (result == 0) {
+                            String message = "Response: 0 = Failed To upload Image";
+                            Log.i(TAG,message);
+                            showSnackbar(message);
+
+                        }
+                        else if (result == 2) {
+                            String message = "Response: 2 = File size Larger Than 50MB";
+                            Log.i(TAG,message);
+                            showSnackbar(message);
+
+
+                        }
+                        else if (result == 3) {
+                            String message = "Response: 3 = Permission denied to create Directory";
+                            Log.i(TAG,message);
+                            showSnackbar(message);
+
+                        }
+                    }
+                }catch (NumberFormatException e){
+                    loading.dismiss();
+                    String message = "NumberFormatException = Invalid int: ''";
                     showSnackbar(message);
 
-                } else {
-                    if (result == 0) {
-                        String message = "Response: 0 = Failed To upload Image";
-                        Log.i(TAG,message);
-                        showSnackbar(message);
-
-                    }
-                    else if (result == 2) {
-                        String message = "Response: 2 = File size Larger Than 50MB";
-                        Log.i(TAG,message);
-                        showSnackbar(message);
-
-
-                    }
-                    else if (result == 3) {
-                        String message = "Response: 3 = Permission denied to create Directory";
-                        Log.i(TAG,message);
-                        showSnackbar(message);
-
-                    }
                 }
             }
         }, new Response.ErrorListener() {
@@ -403,11 +429,122 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int bufferSize = 1024;
         byte[] buffer = new byte[bufferSize];
 
-        int len = 0;
+        int len;
         while ((len = inputStream.read(buffer)) != -1) {
             byteBuffer.write(buffer, 0, len);
         }
         return byteBuffer.toByteArray();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        startLocationUpdates();
+
+        mLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
+        if(mLocation == null){
+            startLocationUpdates();
+            Toast.makeText(this, "Location not Detected", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.i(TAG, "Connection Suspended");
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.i(TAG, "Connection failed. Error: " + connectionResult.getErrorCode());
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.connect();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+    }
+
+    protected void startLocationUpdates() {
+        // Create the location request
+        mLocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(2 * 1000)
+                .setFastestInterval(2000);
+        // Request location updates
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                mLocationRequest, this);
+        Log.d("reque", "--->>>>");
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
+        String msg = "Updated Location: " +
+                Double.toString(location.getLatitude()) + "," +
+                Double.toString(location.getLongitude());
+        mLatitudeTextView.setText(String.valueOf(location.getLatitude()));
+        mLongitudeTextView.setText(String.valueOf(location.getLongitude() ));
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        // You can now create a LatLng Object for use with maps
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+    }
+
+    private boolean checkLocation() {
+        if(!isLocationEnabled())
+            showAlert();
+        return isLocationEnabled();
+    }
+
+    private void showAlert() {
+        final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Enable Location")
+                .setMessage("Your Locations Settings is set to 'Off'.\nPlease Enable Location to " +
+                        "use this app")
+                .setPositiveButton("Location Settings", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+
+                        Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(myIntent);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+
+                    }
+                });
+        dialog.show();
+    }
+
+    private boolean isLocationEnabled() {
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
 
 }
